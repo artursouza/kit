@@ -23,6 +23,7 @@ import (
 
 func TestAtomicMapInt32_New_Get_Delete(t *testing.T) {
 	m := NewAtomicMap[string, int32]().(*atomicMap[string, int32])
+	m64 := NewAtomicInt64Map[string]()
 
 	require.NotNil(t, m)
 	require.NotNil(t, m.items)
@@ -45,6 +46,26 @@ func TestAtomicMapInt32_New_Get_Delete(t *testing.T) {
 		// Delete the key and check it no longer exists
 		m.Delete(key)
 		_, ok = m.Get(key)
+		require.False(t, ok)
+	})
+
+	t.Run("basic operations without lock", func(t *testing.T) {
+		key := "key1_nolock"
+		value := int64(1001)
+
+		// Initially, the key should not exist
+		_, ok := m64.Get(key)
+		require.False(t, ok)
+
+		// Add a value and check it
+		m64.GetOrCreate(key, 0).Store(value)
+		result, ok := m64.Get(key)
+		require.True(t, ok)
+		assert.Equal(t, value, result.Load())
+
+		// Delete the key and check it no longer exists
+		m64.Delete(key)
+		_, ok = m64.Get(key)
 		require.False(t, ok)
 	})
 
